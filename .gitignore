@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# User data & config (generated at runtime)
+.whisper_flow/
+
+# Temporary / audio files
+*.tmp
+*.temp
+*.wav
+*.mp3
+
+# Claude Code
+.claude/

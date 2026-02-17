@@ -1,0 +1,26 @@
+# Core dependencies
+openai-whisper>=20231117
+sounddevice>=0.4.6
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Keyboard automation
+pynput>=1.7.6
+keyboard>=0.13.5
+pyperclip>=1.8.2
+
+# UI components
+customtkinter>=5.2.0
+Pillow>=10.0.0
+
+# Voice Activity Detection
+webrtcvad>=2.0.10
+
+# SLM and ML dependencies
+transformers>=4.35.0
+torch>=2.0.0
+accelerate>=0.25.0
+sentencepiece>=0.1.99
+
+# Utilities
+colorama>=0.4.6
