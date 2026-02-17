@@ -35,11 +35,11 @@ class TrayIcon:
         draw = ImageDraw.Draw(image)
 
         if recording:
-            color = (255, 0, 0)  # Red when recording
+            color = (184, 120, 120)  # Muted red when recording
         elif self.current_mode == "voice_notes":
-            color = (0, 180, 100)  # Green for notes mode
+            color = (125, 168, 136)  # Soft green for notes mode
         else:
-            color = (0, 120, 255)  # Blue for code prompt mode
+            color = (27, 185, 206)   # Seren cyan for code prompt mode
 
         # Mic body
         draw.ellipse([20, 15, 44, 40], fill=color)

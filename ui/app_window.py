@@ -1,6 +1,6 @@
 """
-Main desktop application window - dark themed, sidebar navigation.
-Built with CustomTkinter for modern look.
+Main desktop application window - Seren-inspired calm, dark therapeutic UI.
+Built with CustomTkinter. Uses Imbue for display text, Inter/system for body.
 """
 
 import customtkinter as ctk
@@ -10,38 +10,86 @@ from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
 
-# App colors
+# Try to load custom fonts (Imbue + Inter)
+try:
+    from ui.fonts import get_display_font, get_body_font, load_fonts
+    _fonts = load_fonts()
+    DISPLAY_FONT = _fonts["display"]
+    BODY_FONT = _fonts["body"]
+except Exception:
+    DISPLAY_FONT = "Georgia"
+    BODY_FONT = "Segoe UI"
+
+# ============================================================
+# Seren-inspired color palette - calm, therapeutic, dark
+# ============================================================
 COLORS = {
-    "bg_dark": "#1a1a1a",
-    "bg_sidebar": "#111111",
-    "bg_card": "#2a2a2a",
-    "bg_input": "#333333",
-    "bg_hover": "#3a3a3a",
-    "accent": "#f5a623",       # Gold/amber accent like Flowin
-    "accent_hover": "#e09000",
-    "text_primary": "#ffffff",
-    "text_secondary": "#aaaaaa",
-    "text_muted": "#666666",
-    "recording_red": "#ff4444",
-    "success_green": "#44cc66",
-    "border": "#333333",
+    # Backgrounds - deep, layered darks
+    "bg_dark": "#191A1A",
+    "bg_secondary": "#202222",
+    "bg_sidebar": "#202222",
+    "bg_card": "#262626",
+    "bg_input": "#202222",
+    "bg_hover": "#2F302F",
+    "bg_elevated": "#2A2D2E",
+
+    # Accent - soft cyan (Seren primary)
+    "accent": "#1BB9CE",
+    "accent_hover": "#17A3B6",
+    "accent_soft": "#1BB9CE22",
+    "accent_purple": "#9B8FE8",
+
+    # Text - layered hierarchy
+    "text_primary": "#FFFFFF",
+    "text_secondary": "#AAAAAA",
+    "text_tertiary": "#909090",
+    "text_muted": "#737373",
+
+    # Borders - subtle
+    "border": "#3C3F40",
+    "border_light": "#2A2D2E",
+
+    # Status - muted for calm UI
+    "recording_red": "#B87878",
+    "recording_red_hover": "#A06868",
+    "success": "#7DA888",
+    "warning": "#D4A574",
+    "error": "#B87878",
+
+    # Voice orb
+    "orb_core": "#4DA8E8",
+    "orb_glow": "#2E8BC0",
+    "orb_ring": "#1E5F8A",
 }
 
 
+def _display_font(size: int, weight: str = "normal") -> ctk.CTkFont:
+    """Create a display/heading font (Imbue style)."""
+    return ctk.CTkFont(family=DISPLAY_FONT, size=size, weight=weight)
+
+
+def _body_font(size: int, weight: str = "normal") -> ctk.CTkFont:
+    """Create a body text font (Inter style)."""
+    return ctk.CTkFont(family=BODY_FONT, size=size, weight=weight)
+
+
+# ============================================================
+# Sidebar Button
+# ============================================================
 class SidebarButton(ctk.CTkButton):
-    """Custom sidebar navigation button."""
+    """Minimal sidebar navigation button - Seren style."""
 
     def __init__(self, master, text, icon_text="", **kwargs):
         super().__init__(
             master,
             text=f"  {icon_text}  {text}" if icon_text else f"  {text}",
             anchor="w",
-            height=44,
-            corner_radius=8,
-            font=ctk.CTkFont(size=14),
+            height=46,
+            corner_radius=10,
+            font=_body_font(14, "bold"),
             fg_color="transparent",
             hover_color=COLORS["bg_hover"],
-            text_color=COLORS["text_secondary"],
+            text_color=COLORS["text_muted"],
             **kwargs
         )
         self._is_active = False
@@ -56,24 +104,28 @@ class SidebarButton(ctk.CTkButton):
         else:
             self.configure(
                 fg_color="transparent",
-                text_color=COLORS["text_secondary"]
+                text_color=COLORS["text_muted"]
             )
 
 
+# ============================================================
+# Record Button - Voice Orb inspired
+# ============================================================
 class RecordButton(ctk.CTkButton):
-    """Large circular record button with animation."""
+    """Circular record button inspired by Seren's voice orb."""
 
-    def __init__(self, master, **kwargs):
+    def __init__(self, master, size=90, **kwargs):
+        self._size = size
         super().__init__(
             master,
             text="",
-            width=80,
-            height=80,
-            corner_radius=40,
+            width=size,
+            height=size,
+            corner_radius=size // 2,
             fg_color=COLORS["bg_card"],
-            hover_color=COLORS["bg_hover"],
-            border_width=3,
-            border_color=COLORS["accent"],
+            hover_color=COLORS["bg_elevated"],
+            border_width=2,
+            border_color=COLORS["orb_core"],
             **kwargs
         )
         self._is_recording = False
@@ -87,25 +139,30 @@ class RecordButton(ctk.CTkButton):
         if self._is_recording:
             self.configure(
                 fg_color=COLORS["recording_red"],
-                hover_color="#cc3333",
+                hover_color=COLORS["recording_red_hover"],
                 border_color=COLORS["recording_red"],
-                text="Stop",
-                font=ctk.CTkFont(size=13, weight="bold"),
-                text_color="white"
+                border_width=3,
+                text="stop",
+                font=_body_font(13, "bold"),
+                text_color="#FFFFFF"
             )
         else:
             self.configure(
                 fg_color=COLORS["bg_card"],
-                hover_color=COLORS["bg_hover"],
-                border_color=COLORS["accent"],
-                text="Rec",
-                font=ctk.CTkFont(size=13, weight="bold"),
-                text_color=COLORS["accent"]
+                hover_color=COLORS["bg_elevated"],
+                border_color=COLORS["orb_core"],
+                border_width=2,
+                text="rec",
+                font=_body_font(13, "bold"),
+                text_color=COLORS["orb_core"]
             )
 
 
+# ============================================================
+# Code Prompt Page
+# ============================================================
 class CodePromptPage(ctk.CTkFrame):
-    """Code Prompt mode page."""
+    """Code Prompt mode page - Seren aesthetic."""
 
     def __init__(self, master, **kwargs):
         super().__init__(master, fg_color=COLORS["bg_dark"], **kwargs)
@@ -119,79 +176,87 @@ class CodePromptPage(ctk.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(3, weight=1)
 
-        # Header
+        # ---- Header with Imbue display font ----
         header = ctk.CTkFrame(self, fg_color="transparent")
-        header.grid(row=0, column=0, sticky="ew", padx=30, pady=(25, 5))
+        header.grid(row=0, column=0, sticky="ew", padx=36, pady=(32, 8))
         header.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(
-            header, text="Code Prompt",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            header, text="code prompt",
+            font=_display_font(36),
             text_color=COLORS["text_primary"]
         ).grid(row=0, column=0, sticky="w")
 
         ctk.CTkLabel(
-            header, text="Speak your coding problem. Get a polished prompt.",
-            font=ctk.CTkFont(size=14),
-            text_color=COLORS["text_secondary"]
-        ).grid(row=1, column=0, sticky="w", pady=(4, 0))
+            header,
+            text="speak your coding problem. get a polished prompt.",
+            font=_body_font(14),
+            text_color=COLORS["text_tertiary"]
+        ).grid(row=1, column=0, sticky="w", pady=(2, 0))
 
-        # Record section
+        # ---- Record section ----
         record_frame = ctk.CTkFrame(self, fg_color="transparent")
-        record_frame.grid(row=1, column=0, pady=(20, 10))
+        record_frame.grid(row=1, column=0, pady=(24, 16))
 
         self.record_btn = RecordButton(record_frame, command=self._on_record)
         self.record_btn.pack()
 
         self.status_label = ctk.CTkLabel(
-            record_frame, text="Press to record or Ctrl+Shift+Space",
-            font=ctk.CTkFont(size=12),
+            record_frame,
+            text="press to record or ctrl+shift+space",
+            font=_body_font(12),
             text_color=COLORS["text_muted"]
         )
-        self.status_label.pack(pady=(8, 0))
+        self.status_label.pack(pady=(12, 0))
 
-        # Raw transcription
-        raw_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=12)
-        raw_frame.grid(row=2, column=0, sticky="ew", padx=30, pady=(10, 5))
+        # ---- Raw transcription card ----
+        raw_frame = ctk.CTkFrame(
+            self, fg_color=COLORS["bg_card"], corner_radius=14,
+            border_width=1, border_color=COLORS["border_light"]
+        )
+        raw_frame.grid(row=2, column=0, sticky="ew", padx=36, pady=(8, 6))
         raw_frame.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(
-            raw_frame, text="What you said:",
-            font=ctk.CTkFont(size=12, weight="bold"),
-            text_color=COLORS["text_secondary"]
-        ).grid(row=0, column=0, sticky="w", padx=15, pady=(12, 0))
+            raw_frame, text="what you said",
+            font=_body_font(12, "bold"),
+            text_color=COLORS["text_muted"]
+        ).grid(row=0, column=0, sticky="w", padx=18, pady=(14, 0))
 
         self.raw_text = ctk.CTkTextbox(
             raw_frame, height=60,
-            font=ctk.CTkFont(size=13),
+            font=_display_font(16),
             fg_color=COLORS["bg_card"],
-            text_color=COLORS["text_muted"],
+            text_color=COLORS["text_tertiary"],
             border_width=0,
             wrap="word"
         )
-        self.raw_text.grid(row=1, column=0, sticky="ew", padx=15, pady=(4, 12))
+        self.raw_text.grid(row=1, column=0, sticky="ew", padx=18, pady=(4, 14))
         self.raw_text.configure(state="disabled")
 
-        # Enhanced prompt
-        enhanced_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_card"], corner_radius=12)
-        enhanced_frame.grid(row=3, column=0, sticky="nsew", padx=30, pady=(5, 10))
+        # ---- Enhanced prompt card ----
+        enhanced_frame = ctk.CTkFrame(
+            self, fg_color=COLORS["bg_card"], corner_radius=14,
+            border_width=1, border_color=COLORS["border_light"]
+        )
+        enhanced_frame.grid(row=3, column=0, sticky="nsew", padx=36, pady=(6, 16))
         enhanced_frame.grid_columnconfigure(0, weight=1)
         enhanced_frame.grid_rowconfigure(1, weight=1)
 
         enhanced_header = ctk.CTkFrame(enhanced_frame, fg_color="transparent")
-        enhanced_header.grid(row=0, column=0, sticky="ew", padx=15, pady=(12, 0))
+        enhanced_header.grid(row=0, column=0, sticky="ew", padx=18, pady=(14, 0))
         enhanced_header.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(
-            enhanced_header, text="Enhanced Prompt:",
-            font=ctk.CTkFont(size=12, weight="bold"),
+            enhanced_header, text="enhanced prompt",
+            font=_body_font(12, "bold"),
             text_color=COLORS["accent"]
         ).grid(row=0, column=0, sticky="w")
 
         self.copy_btn = ctk.CTkButton(
-            enhanced_header, text="Copy",
-            width=70, height=28, corner_radius=6,
-            font=ctk.CTkFont(size=12),
+            enhanced_header, text="copy",
+            width=72, height=30, corner_radius=20,
+            font=_body_font(12, "bold"),
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_hover"],
             text_color=COLORS["bg_dark"],
@@ -201,13 +266,13 @@ class CodePromptPage(ctk.CTkFrame):
 
         self.enhanced_text = ctk.CTkTextbox(
             enhanced_frame,
-            font=ctk.CTkFont(size=14),
+            font=_body_font(14),
             fg_color=COLORS["bg_card"],
             text_color=COLORS["text_primary"],
             border_width=0,
             wrap="word"
         )
-        self.enhanced_text.grid(row=1, column=0, sticky="nsew", padx=15, pady=(4, 12))
+        self.enhanced_text.grid(row=1, column=0, sticky="nsew", padx=18, pady=(6, 14))
 
     def _on_record(self):
         if self.on_record_toggle:
@@ -221,12 +286,21 @@ class CodePromptPage(ctk.CTkFrame):
     def set_recording(self, recording: bool):
         self.record_btn.set_recording(recording)
         if recording:
-            self.status_label.configure(text="Listening... speak now", text_color=COLORS["recording_red"])
+            self.status_label.configure(
+                text="listening... speak now",
+                text_color=COLORS["recording_red"]
+            )
         else:
-            self.status_label.configure(text="Press to record or Ctrl+Shift+Space", text_color=COLORS["text_muted"])
+            self.status_label.configure(
+                text="press to record or ctrl+shift+space",
+                text_color=COLORS["text_muted"]
+            )
 
     def set_processing(self):
-        self.status_label.configure(text="Processing...", text_color=COLORS["accent"])
+        self.status_label.configure(
+            text="processing...",
+            text_color=COLORS["accent"]
+        )
 
     def show_result(self, raw: str, enhanced: str):
         self.raw_text.configure(state="normal")
@@ -237,15 +311,24 @@ class CodePromptPage(ctk.CTkFrame):
         self.enhanced_text.delete("1.0", "end")
         self.enhanced_text.insert("1.0", enhanced)
 
-        self.status_label.configure(text="Done! Edit the prompt or copy it.", text_color=COLORS["success_green"])
+        self.status_label.configure(
+            text="done! edit the prompt or copy it.",
+            text_color=COLORS["success"]
+        )
 
 
+# ============================================================
+# Note Card
+# ============================================================
 class NoteCard(ctk.CTkFrame):
-    """A single note card in the list."""
+    """A single note card - soft, rounded, Seren style."""
 
     def __init__(self, master, note_data: dict, on_click: Callable = None, **kwargs):
-        super().__init__(master, fg_color=COLORS["bg_card"], corner_radius=10,
-                         height=70, **kwargs)
+        super().__init__(
+            master, fg_color=COLORS["bg_card"], corner_radius=12,
+            height=76, border_width=1, border_color=COLORS["border_light"],
+            **kwargs
+        )
         self.note_data = note_data
         self._on_click = on_click
 
@@ -262,18 +345,18 @@ class NoteCard(ctk.CTkFrame):
 
         ctk.CTkLabel(
             self, text=time_str,
-            font=ctk.CTkFont(size=11),
+            font=_body_font(11),
             text_color=COLORS["text_muted"],
             anchor="w"
-        ).grid(row=0, column=0, sticky="w", padx=14, pady=(10, 0))
+        ).grid(row=0, column=0, sticky="w", padx=16, pady=(12, 0))
 
         ctk.CTkLabel(
             self, text=preview,
-            font=ctk.CTkFont(size=13),
-            text_color=COLORS["text_primary"],
+            font=_body_font(13),
+            text_color=COLORS["text_secondary"],
             anchor="w",
-            wraplength=400
-        ).grid(row=1, column=0, sticky="w", padx=14, pady=(2, 10))
+            wraplength=420
+        ).grid(row=1, column=0, sticky="w", padx=16, pady=(3, 12))
 
         self.bind("<Button-1>", self._clicked)
         for child in self.winfo_children():
@@ -284,8 +367,11 @@ class NoteCard(ctk.CTkFrame):
             self._on_click(self.note_data)
 
 
+# ============================================================
+# Voice Notes Page
+# ============================================================
 class VoiceNotesPage(ctk.CTkFrame):
-    """Voice Notes mode page."""
+    """Voice Notes mode page - Seren aesthetic."""
 
     def __init__(self, master, **kwargs):
         super().__init__(master, fg_color=COLORS["bg_dark"], **kwargs)
@@ -300,66 +386,67 @@ class VoiceNotesPage(ctk.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(2, weight=1)
 
-        # Header
+        # ---- Header ----
         header = ctk.CTkFrame(self, fg_color="transparent")
-        header.grid(row=0, column=0, sticky="ew", padx=30, pady=(25, 5))
+        header.grid(row=0, column=0, sticky="ew", padx=36, pady=(32, 8))
         header.grid_columnconfigure(0, weight=1)
 
         ctk.CTkLabel(
-            header, text="Voice Notes",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            header, text="voice notes",
+            font=_display_font(36),
             text_color=COLORS["text_primary"]
         ).grid(row=0, column=0, sticky="w")
 
         # Record button in header
-        self.record_btn = RecordButton(header)
-        self.record_btn.configure(
-            width=50, height=50, corner_radius=25,
-            command=self._on_record
-        )
+        self.record_btn = RecordButton(header, size=52)
+        self.record_btn.configure(command=self._on_record)
         self.record_btn.grid(row=0, column=1, sticky="e")
 
         self.status_label = ctk.CTkLabel(
-            header, text="Press to record a new note",
-            font=ctk.CTkFont(size=12),
+            header,
+            text="press to record a new note",
+            font=_body_font(12),
             text_color=COLORS["text_muted"]
         )
         self.status_label.grid(row=1, column=0, sticky="w", pady=(4, 0), columnspan=2)
 
-        # Search bar
+        # ---- Search bar ----
         search_frame = ctk.CTkFrame(self, fg_color="transparent")
-        search_frame.grid(row=1, column=0, sticky="ew", padx=30, pady=(15, 10))
+        search_frame.grid(row=1, column=0, sticky="ew", padx=36, pady=(16, 12))
         search_frame.grid_columnconfigure(0, weight=1)
 
         self.search_entry = ctk.CTkEntry(
-            search_frame, placeholder_text="Search notes...",
-            height=38, corner_radius=10,
-            font=ctk.CTkFont(size=13),
+            search_frame,
+            placeholder_text="search notes...",
+            height=42, corner_radius=12,
+            font=_body_font(13),
             fg_color=COLORS["bg_input"],
             border_color=COLORS["border"],
-            text_color=COLORS["text_primary"]
+            border_width=1,
+            text_color=COLORS["text_primary"],
+            placeholder_text_color=COLORS["text_muted"]
         )
         self.search_entry.grid(row=0, column=0, sticky="ew")
         self.search_entry.bind("<KeyRelease>", self._on_search)
 
-        # Notes list (scrollable)
+        # ---- Notes list ----
         self.notes_scroll = ctk.CTkScrollableFrame(
             self, fg_color=COLORS["bg_dark"],
             scrollbar_button_color=COLORS["bg_card"],
             scrollbar_button_hover_color=COLORS["bg_hover"]
         )
-        self.notes_scroll.grid(row=2, column=0, sticky="nsew", padx=30, pady=(5, 10))
+        self.notes_scroll.grid(row=2, column=0, sticky="nsew", padx=36, pady=(4, 16))
         self.notes_scroll.grid_columnconfigure(0, weight=1)
 
         # Note detail overlay (hidden by default)
         self.detail_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_dark"])
         self.detail_frame.grid_columnconfigure(0, weight=1)
         self.detail_frame.grid_rowconfigure(1, weight=1)
-        # Don't grid it yet - shown on demand
 
         self._empty_label = ctk.CTkLabel(
-            self.notes_scroll, text="No notes yet. Record your first one!",
-            font=ctk.CTkFont(size=14),
+            self.notes_scroll,
+            text="no notes yet. record your first one!",
+            font=_display_font(18),
             text_color=COLORS["text_muted"]
         )
 
@@ -368,11 +455,9 @@ class VoiceNotesPage(ctk.CTkFrame):
         self.refresh_notes()
 
     def refresh_notes(self):
-        """Reload notes from store."""
         if not self._notes_store:
             return
 
-        # Clear existing
         for widget in self.notes_scroll.winfo_children():
             widget.destroy()
 
@@ -380,19 +465,19 @@ class VoiceNotesPage(ctk.CTkFrame):
 
         if not notes:
             self._empty_label = ctk.CTkLabel(
-                self.notes_scroll, text="No notes yet. Record your first one!",
-                font=ctk.CTkFont(size=14),
+                self.notes_scroll,
+                text="no notes yet. record your first one!",
+                font=_display_font(18),
                 text_color=COLORS["text_muted"]
             )
-            self._empty_label.grid(row=0, column=0, pady=40)
+            self._empty_label.grid(row=0, column=0, pady=50)
             return
 
         for i, note in enumerate(notes):
             card = NoteCard(self.notes_scroll, note, on_click=self._show_note_detail)
-            card.grid(row=i, column=0, sticky="ew", pady=(0, 6))
+            card.grid(row=i, column=0, sticky="ew", pady=(0, 8))
 
     def _show_note_detail(self, note_data: dict):
-        """Show full note content."""
         if not self._notes_store:
             return
 
@@ -400,46 +485,50 @@ class VoiceNotesPage(ctk.CTkFrame):
         if not full_note:
             return
 
-        # Clear detail
         for w in self.detail_frame.winfo_children():
             w.destroy()
 
-        # Back button
+        # Top bar with back + delete
+        top_bar = ctk.CTkFrame(self.detail_frame, fg_color="transparent")
+        top_bar.grid(row=0, column=0, sticky="ew", padx=36, pady=(24, 12))
+        top_bar.grid_columnconfigure(0, weight=1)
+
         back_btn = ctk.CTkButton(
-            self.detail_frame, text="< Back",
-            width=80, height=32, corner_radius=6,
-            font=ctk.CTkFont(size=13),
+            top_bar, text="< back",
+            width=80, height=34, corner_radius=10,
+            font=_body_font(13),
             fg_color="transparent",
             hover_color=COLORS["bg_hover"],
             text_color=COLORS["text_secondary"],
             command=self._hide_note_detail
         )
-        back_btn.grid(row=0, column=0, sticky="w", padx=30, pady=(20, 10))
+        back_btn.grid(row=0, column=0, sticky="w")
 
-        # Delete button
         del_btn = ctk.CTkButton(
-            self.detail_frame, text="Delete",
-            width=70, height=32, corner_radius=6,
-            font=ctk.CTkFont(size=12),
+            top_bar, text="delete",
+            width=72, height=34, corner_radius=10,
+            font=_body_font(12, "bold"),
             fg_color=COLORS["recording_red"],
-            hover_color="#cc3333",
+            hover_color=COLORS["recording_red_hover"],
+            text_color="#FFFFFF",
             command=lambda: self._delete_note(full_note["id"])
         )
-        del_btn.grid(row=0, column=0, sticky="e", padx=30, pady=(20, 10))
+        del_btn.grid(row=0, column=1, sticky="e")
 
         # Note content
         content_text = ctk.CTkTextbox(
             self.detail_frame,
-            font=ctk.CTkFont(size=14),
+            font=_body_font(14),
             fg_color=COLORS["bg_card"],
             text_color=COLORS["text_primary"],
-            corner_radius=12,
+            corner_radius=14,
+            border_width=1,
+            border_color=COLORS["border_light"],
             wrap="word"
         )
-        content_text.grid(row=1, column=0, sticky="nsew", padx=30, pady=(0, 20))
+        content_text.grid(row=1, column=0, sticky="nsew", padx=36, pady=(0, 24))
         content_text.insert("1.0", full_note.get("text", ""))
 
-        # Show detail, hide list
         self.notes_scroll.grid_remove()
         self.search_entry.master.grid_remove()
         self.detail_frame.grid(row=2, column=0, sticky="nsew", padx=0, pady=0)
@@ -475,33 +564,49 @@ class VoiceNotesPage(ctk.CTkFrame):
 
         if not notes:
             ctk.CTkLabel(
-                self.notes_scroll, text="No notes found.",
-                font=ctk.CTkFont(size=14),
+                self.notes_scroll,
+                text="no notes found.",
+                font=_body_font(14),
                 text_color=COLORS["text_muted"]
-            ).grid(row=0, column=0, pady=40)
+            ).grid(row=0, column=0, pady=50)
             return
 
         for i, note in enumerate(notes):
             card = NoteCard(self.notes_scroll, note, on_click=self._show_note_detail)
-            card.grid(row=i, column=0, sticky="ew", pady=(0, 6))
+            card.grid(row=i, column=0, sticky="ew", pady=(0, 8))
 
     def set_recording(self, recording: bool):
         self.record_btn.set_recording(recording)
         if recording:
-            self.status_label.configure(text="Listening...", text_color=COLORS["recording_red"])
+            self.status_label.configure(
+                text="listening...",
+                text_color=COLORS["recording_red"]
+            )
         else:
-            self.status_label.configure(text="Press to record a new note", text_color=COLORS["text_muted"])
+            self.status_label.configure(
+                text="press to record a new note",
+                text_color=COLORS["text_muted"]
+            )
 
     def set_processing(self):
-        self.status_label.configure(text="Processing...", text_color=COLORS["accent"])
+        self.status_label.configure(
+            text="processing...",
+            text_color=COLORS["accent"]
+        )
 
     def show_saved(self):
-        self.status_label.configure(text="Note saved!", text_color=COLORS["success_green"])
+        self.status_label.configure(
+            text="note saved!",
+            text_color=COLORS["success"]
+        )
         self.refresh_notes()
 
 
+# ============================================================
+# Main App Window
+# ============================================================
 class AppWindow(ctk.CTk):
-    """Main application window."""
+    """Main application window - Seren-inspired dark therapeutic aesthetic."""
 
     def __init__(self):
         super().__init__()
@@ -511,8 +616,8 @@ class AppWindow(ctk.CTk):
         ctk.set_default_color_theme("dark-blue")
 
         self.title("Not Whisper Flow")
-        self.geometry("900x650")
-        self.minsize(700, 500)
+        self.geometry("920x680")
+        self.minsize(720, 520)
         self.configure(fg_color=COLORS["bg_dark"])
 
         # Callbacks
@@ -529,69 +634,79 @@ class AppWindow(ctk.CTk):
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
 
-        # ===== SIDEBAR =====
-        sidebar = ctk.CTkFrame(self, width=220, fg_color=COLORS["bg_sidebar"], corner_radius=0)
+        # ===== SIDEBAR - Seren style =====
+        sidebar = ctk.CTkFrame(
+            self, width=230, fg_color=COLORS["bg_sidebar"], corner_radius=0,
+            border_width=0
+        )
         sidebar.grid(row=0, column=0, sticky="ns")
         sidebar.grid_propagate(False)
         sidebar.grid_columnconfigure(0, weight=1)
 
-        # App title
+        # Subtle right border for sidebar
+        border_line = ctk.CTkFrame(
+            self, width=1, fg_color=COLORS["border_light"], corner_radius=0
+        )
+        border_line.grid(row=0, column=0, sticky="nse")
+
+        # App title - Imbue display font
         title_frame = ctk.CTkFrame(sidebar, fg_color="transparent")
-        title_frame.grid(row=0, column=0, sticky="ew", padx=15, pady=(20, 25))
+        title_frame.grid(row=0, column=0, sticky="ew", padx=20, pady=(28, 32))
 
         ctk.CTkLabel(
-            title_frame, text="Not Whisper",
-            font=ctk.CTkFont(size=20, weight="bold"),
+            title_frame, text="not whisper",
+            font=_display_font(24),
             text_color=COLORS["accent"]
         ).pack(anchor="w")
 
         ctk.CTkLabel(
-            title_frame, text="Flow",
-            font=ctk.CTkFont(size=20, weight="bold"),
+            title_frame, text="flow",
+            font=_display_font(24),
             text_color=COLORS["text_primary"]
         ).pack(anchor="w")
 
         # Nav buttons
         nav_frame = ctk.CTkFrame(sidebar, fg_color="transparent")
-        nav_frame.grid(row=1, column=0, sticky="ew", padx=10)
+        nav_frame.grid(row=1, column=0, sticky="ew", padx=12)
         nav_frame.grid_columnconfigure(0, weight=1)
 
         self.btn_code = SidebarButton(
             nav_frame, text="Code Prompt", icon_text=">_",
             command=lambda: self._switch_page("code_prompt")
         )
-        self.btn_code.grid(row=0, column=0, sticky="ew", pady=2)
+        self.btn_code.grid(row=0, column=0, sticky="ew", pady=3)
 
         self.btn_notes = SidebarButton(
             nav_frame, text="Voice Notes", icon_text="~",
             command=lambda: self._switch_page("voice_notes")
         )
-        self.btn_notes.grid(row=1, column=0, sticky="ew", pady=2)
+        self.btn_notes.grid(row=1, column=0, sticky="ew", pady=3)
 
         # Spacer
         sidebar.grid_rowconfigure(2, weight=1)
 
-        # Bottom info
+        # Bottom info - calm, muted
         info_frame = ctk.CTkFrame(sidebar, fg_color="transparent")
-        info_frame.grid(row=3, column=0, sticky="ew", padx=15, pady=(0, 15))
+        info_frame.grid(row=3, column=0, sticky="ew", padx=20, pady=(0, 20))
 
         ctk.CTkLabel(
             info_frame,
-            text="100% Local & Free",
-            font=ctk.CTkFont(size=11),
+            text="100% local & private",
+            font=_body_font(11),
             text_color=COLORS["text_muted"]
         ).pack(anchor="w")
 
-        hotkey_label = ctk.CTkLabel(
+        ctk.CTkLabel(
             info_frame,
-            text="Ctrl+Shift+Space",
-            font=ctk.CTkFont(size=11),
+            text="ctrl+shift+space",
+            font=_body_font(11),
             text_color=COLORS["text_muted"]
-        )
-        hotkey_label.pack(anchor="w")
+        ).pack(anchor="w", pady=(2, 0))
 
         # ===== CONTENT AREA =====
-        self.content_frame = ctk.CTkFrame(self, fg_color=COLORS["bg_dark"], corner_radius=0)
+        self.content_frame = ctk.CTkFrame(
+            self, fg_color=COLORS["bg_dark"], corner_radius=0
+        )
         self.content_frame.grid(row=0, column=1, sticky="nsew")
         self.content_frame.grid_columnconfigure(0, weight=1)
         self.content_frame.grid_rowconfigure(0, weight=1)
@@ -640,7 +755,6 @@ class AppWindow(ctk.CTk):
         return self._current_page
 
     def set_recording(self, recording: bool):
-        """Update recording state on the active page."""
         self.code_page.set_recording(recording)
         self.notes_page.set_recording(recording)
 
