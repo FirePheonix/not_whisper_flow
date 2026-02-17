@@ -1,5 +1,7 @@
 # Not Whisper Flow
 
+![WhatsApp Image 2026-02-17 at 21 52 46](https://github.com/user-attachments/assets/f0f54be5-9992-4f0f-a02b-c8b6ab0d2ce2)
+
 100% local, free, open-source voice-to-prompt tool. Speak your coding problem, get a polished prompt for AI assistants. Or use it as a voice notes dictionary.
 
 ## What It Does
