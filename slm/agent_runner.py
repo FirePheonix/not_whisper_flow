@@ -184,13 +184,15 @@ class AgentRunner:
 
     # ── Main entry point ──────────────────────────────────────
 
-    def parse(self, text: str, mode: str = "code_prompt") -> AgentResult:
+    def parse(self, text: str, mode: str = "code_prompt", context=None) -> AgentResult:
         """
         Convert voice input to an ordered list of ToolCalls.
 
         Args:
-            text: Raw Whisper transcription
-            mode: "code_prompt" | "voice_notes"  (used by regex fallback)
+            text:    Raw Whisper transcription
+            mode:    "code_prompt" | "voice_notes"  (used by regex fallback)
+            context: Optional AppContext from ContextCapture — gives Ollama
+                     awareness of the currently focused app and selected text.
         """
         if not text or not text.strip():
             return AgentResult(raw_text=text or "")
@@ -198,7 +200,7 @@ class AgentRunner:
         # 1. Ollama (primary — 7-8B, native tool calling)
         if self._ollama is not None:
             try:
-                calls = self._ollama.parse_tools(text)
+                calls = self._ollama.parse_tools(text, context=context)
                 if calls:
                     logger.info(f"Agent[ollama]→ {[str(c) for c in calls]}")
                     self._save(text, calls, "ollama")
@@ -244,6 +246,8 @@ class AgentRunner:
                 args = {"action": t}
             elif a == "type_text":
                 args = {"text": t}
+            elif a == "screenshot_and_describe":
+                args = {"query": t}
             else:
                 args = {"target": t}
             return [ToolCall(tool=a, args=args)]

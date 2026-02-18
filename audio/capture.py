@@ -50,6 +50,9 @@ class AudioCapture:
             # Copy audio data to queue (indata is reused by sounddevice)
             audio_chunk = indata.copy()
             self.audio_queue.put(audio_chunk)
+
+        # Always track live RMS for waveform visualisation
+        self._current_rms = float(np.sqrt(np.mean(indata.astype(np.float32) ** 2)))
     
     def start(self):
         """Start audio capture."""
@@ -119,6 +122,11 @@ class AudioCapture:
         else:
             return np.array([], dtype=np.float32)
     
+    @property
+    def current_rms(self) -> float:
+        """Latest RMS level from the mic (0.0–1.0). Safe to call from any thread."""
+        return getattr(self, '_current_rms', 0.0)
+
     def clear_buffer(self):
         """Clear the audio queue."""
         while not self.audio_queue.empty():

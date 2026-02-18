@@ -116,6 +116,27 @@ class CommandRouter:
         r"^write\s+(.+)$",
     ]
 
+    # --- Screen / context query patterns ---
+    # These route to screenshot_and_describe (or respond if selected text available)
+    _SCREEN = [
+        r"^summarize\s+this",
+        r"^summarize\s+(?:the\s+)?(?:page|tab|article|text|document|code|content|post|chat|message)",
+        r"^explain\s+this",
+        r"^explain\s+(?:the\s+)?(?:code|text|page|article|document|error|message)",
+        r"^what\s+(?:does|is|are)\s+this",
+        r"^what\s+(?:is\s+)?(?:on\s+)?(?:my\s+)?(?:screen|display)",
+        r"^what\s+am\s+i\s+looking\s+at",
+        r"^describe\s+this",
+        r"^describe\s+(?:the\s+)?(?:screen|page|image|content)",
+        r"^read\s+this",
+        r"^read\s+(?:the\s+)?(?:page|article|text|document)",
+        r"^translate\s+this",
+        r"^tldr\b",
+        r"^give\s+me\s+a\s+summary",
+        r"^what\s+does\s+it\s+say",
+        r"^what\s+is\s+(?:this|that)\s+about",
+    ]
+
     def route(self, text: str, mode: str = "code_prompt") -> RouteResult:
         """
         Route transcribed text to the appropriate handler.
@@ -189,6 +210,17 @@ class CommandRouter:
                 target_orig = clean[target_start:] if target_start < len(clean) else m.group(1)
                 logger.info(f"Router: type_text '{target_orig[:40]}...'")
                 return RouteResult(route="command", action="type_text", target=target_orig, raw_text=clean)
+
+        # --- Screen / context query ---
+        for pattern in self._SCREEN:
+            if re.match(pattern, clean_lower, re.IGNORECASE):
+                logger.info(f"Router: screenshot_and_describe '{clean_lower[:40]}'")
+                return RouteResult(
+                    route="command",
+                    action="screenshot_and_describe",
+                    target=clean,   # pass full original text as the query
+                    raw_text=clean,
+                )
 
         # --- Fallback: route to mode ---
         if mode == "voice_notes":

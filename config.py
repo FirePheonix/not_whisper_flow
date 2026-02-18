@@ -51,6 +51,7 @@ class Config:
         # Ollama (local 7-8B agent brain)
         "ollama_model": "qwen2.5:7b",   # any model: llama3.1:8b, llama3.2:3b, etc.
         "ollama_url": "http://localhost:11434",
+        "vision_model": "llava:7b",     # vision: llava:7b, minicpm-v, moondream
 
         # Advanced
         "enable_gpu": True,
