@@ -109,13 +109,20 @@ class SidebarButton(ctk.CTkButton):
 
 
 # ============================================================
-# Record Button - Voice Orb inspired
+# Record Orb - large pulsing voice orb (primary UI element)
 # ============================================================
 class RecordButton(ctk.CTkButton):
-    """Circular record button inspired by Seren's voice orb."""
+    """
+    Large circular record orb - the primary interaction element.
+    Pulses when recording is active. Inspired by Seren's voice orb.
+    """
 
-    def __init__(self, master, size=90, **kwargs):
+    def __init__(self, master, size=130, **kwargs):
         self._size = size
+        self._is_recording = False
+        self._pulse_step = 0
+        self._pulse_id = None
+
         super().__init__(
             master,
             text="",
@@ -124,16 +131,19 @@ class RecordButton(ctk.CTkButton):
             corner_radius=size // 2,
             fg_color=COLORS["bg_card"],
             hover_color=COLORS["bg_elevated"],
-            border_width=2,
+            border_width=3,
             border_color=COLORS["orb_core"],
             **kwargs
         )
-        self._is_recording = False
         self._update_appearance()
 
     def set_recording(self, recording: bool):
         self._is_recording = recording
         self._update_appearance()
+        if recording:
+            self._start_pulse()
+        else:
+            self._stop_pulse()
 
     def _update_appearance(self):
         if self._is_recording:
@@ -141,9 +151,9 @@ class RecordButton(ctk.CTkButton):
                 fg_color=COLORS["recording_red"],
                 hover_color=COLORS["recording_red_hover"],
                 border_color=COLORS["recording_red"],
-                border_width=3,
-                text="stop",
-                font=_body_font(13, "bold"),
+                border_width=4,
+                text="■",
+                font=_body_font(20, "bold"),
                 text_color="#FFFFFF"
             )
         else:
@@ -151,11 +161,40 @@ class RecordButton(ctk.CTkButton):
                 fg_color=COLORS["bg_card"],
                 hover_color=COLORS["bg_elevated"],
                 border_color=COLORS["orb_core"],
-                border_width=2,
-                text="rec",
-                font=_body_font(13, "bold"),
+                border_width=3,
+                text="●",
+                font=_body_font(24, "bold"),
                 text_color=COLORS["orb_core"]
             )
+
+    # Pulse animation: cycles border opacity between orb colors
+    _PULSE_COLORS = [
+        "#4DA8E8", "#5CB8F0", "#6CC8F8", "#5CB8F0",
+        "#4DA8E8", "#3A9BD8", "#2E8BC0", "#3A9BD8",
+    ]
+
+    def _start_pulse(self):
+        self._pulse_step = 0
+        self._tick_pulse()
+
+    def _tick_pulse(self):
+        if not self._is_recording:
+            return
+        color = self._PULSE_COLORS[self._pulse_step % len(self._PULSE_COLORS)]
+        try:
+            self.configure(border_color=color)
+        except Exception:
+            return
+        self._pulse_step += 1
+        self._pulse_id = self.after(120, self._tick_pulse)
+
+    def _stop_pulse(self):
+        if self._pulse_id:
+            try:
+                self.after_cancel(self._pulse_id)
+            except Exception:
+                pass
+        self._pulse_id = None
 
 
 # ============================================================
@@ -189,25 +228,25 @@ class CodePromptPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             header,
-            text="speak your coding problem. get a polished prompt.",
+            text="tap the orb. speak. get a polished prompt.",
             font=_body_font(14),
             text_color=COLORS["text_tertiary"]
         ).grid(row=1, column=0, sticky="w", pady=(2, 0))
 
-        # ---- Record section ----
+        # ---- Record orb - the hero element ----
         record_frame = ctk.CTkFrame(self, fg_color="transparent")
-        record_frame.grid(row=1, column=0, pady=(24, 16))
+        record_frame.grid(row=1, column=0, pady=(28, 12))
 
         self.record_btn = RecordButton(record_frame, command=self._on_record)
         self.record_btn.pack()
 
         self.status_label = ctk.CTkLabel(
             record_frame,
-            text="press to record or ctrl+shift+space",
+            text="tap to speak  ·  space bar shortcut",
             font=_body_font(12),
             text_color=COLORS["text_muted"]
         )
-        self.status_label.pack(pady=(12, 0))
+        self.status_label.pack(pady=(14, 0))
 
         # ---- Raw transcription card ----
         raw_frame = ctk.CTkFrame(
@@ -287,12 +326,12 @@ class CodePromptPage(ctk.CTkFrame):
         self.record_btn.set_recording(recording)
         if recording:
             self.status_label.configure(
-                text="listening... speak now",
+                text="listening...  tap again to stop",
                 text_color=COLORS["recording_red"]
             )
         else:
             self.status_label.configure(
-                text="press to record or ctrl+shift+space",
+                text="tap to speak  ·  space bar shortcut",
                 text_color=COLORS["text_muted"]
             )
 
@@ -308,6 +347,7 @@ class CodePromptPage(ctk.CTkFrame):
         self.raw_text.insert("1.0", raw)
         self.raw_text.configure(state="disabled")
 
+        self.enhanced_text.configure(text_color=COLORS["text_primary"])
         self.enhanced_text.delete("1.0", "end")
         self.enhanced_text.insert("1.0", enhanced)
 
@@ -315,6 +355,42 @@ class CodePromptPage(ctk.CTkFrame):
             text="done! edit the prompt or copy it.",
             text_color=COLORS["success"]
         )
+
+    def show_command_result(self, success: bool, message: str, action: str, target: str, raw: str):
+        """Show feedback for an executed system command."""
+        # Show what was heard
+        self.raw_text.configure(state="normal")
+        self.raw_text.delete("1.0", "end")
+        self.raw_text.insert("1.0", raw)
+        self.raw_text.configure(state="disabled")
+
+        # Format a human-readable result in the enhanced area
+        action_labels = {
+            "open_app":      "opened",
+            "close_app":     "closed",
+            "search_web":    "searched",
+            "media_control": "media",
+            "type_text":     "typed",
+        }
+        verb = action_labels.get(action, action)
+
+        if success:
+            result_text = f"{verb}: {target}"
+            self.status_label.configure(
+                text=f"done! {message}",
+                text_color=COLORS["success"]
+            )
+            self.enhanced_text.configure(text_color=COLORS["accent"])
+        else:
+            result_text = f"failed: {message}"
+            self.status_label.configure(
+                text=f"command failed: {message}",
+                text_color=COLORS["recording_red"]
+            )
+            self.enhanced_text.configure(text_color=COLORS["recording_red"])
+
+        self.enhanced_text.delete("1.0", "end")
+        self.enhanced_text.insert("1.0", result_text)
 
 
 # ============================================================
@@ -404,7 +480,7 @@ class VoiceNotesPage(ctk.CTkFrame):
 
         self.status_label = ctk.CTkLabel(
             header,
-            text="press to record a new note",
+            text="tap to record  ·  space bar shortcut",
             font=_body_font(12),
             text_color=COLORS["text_muted"]
         )
@@ -584,7 +660,7 @@ class VoiceNotesPage(ctk.CTkFrame):
             )
         else:
             self.status_label.configure(
-                text="press to record a new note",
+                text="tap to record  ·  space bar shortcut",
                 text_color=COLORS["text_muted"]
             )
 
@@ -698,7 +774,7 @@ class AppWindow(ctk.CTk):
 
         ctk.CTkLabel(
             info_frame,
-            text="ctrl+shift+space",
+            text="space bar to record",
             font=_body_font(11),
             text_color=COLORS["text_muted"]
         ).pack(anchor="w", pady=(2, 0))
@@ -721,6 +797,9 @@ class AppWindow(ctk.CTk):
 
         # Show default page
         self._switch_page("code_prompt")
+
+        # Space bar to toggle recording (when window is focused)
+        self.bind("<space>", lambda _: self._on_record())
 
     def _switch_page(self, page: str):
         self._current_page = page
@@ -766,6 +845,13 @@ class AppWindow(ctk.CTk):
 
     def show_code_result(self, raw: str, enhanced: str):
         self.code_page.show_result(raw, enhanced)
+
+    def show_command_result(self, success: bool, message: str, action: str, target: str, raw: str):
+        """Show command execution feedback. Always routes to code_page regardless of active tab."""
+        # Switch to code page so the user can see the feedback
+        if self._current_page != "code_prompt":
+            self._switch_page("code_prompt")
+        self.code_page.show_command_result(success, message, action, target, raw)
 
     def show_note_saved(self):
         self.notes_page.show_saved()

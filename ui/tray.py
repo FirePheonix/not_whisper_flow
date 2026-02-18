@@ -58,7 +58,8 @@ class TrayIcon:
         return pystray.Menu(
             pystray.MenuItem(
                 recording_text,
-                self._on_toggle_recording_clicked
+                self._on_toggle_recording_clicked,
+                default=True
             ),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem(

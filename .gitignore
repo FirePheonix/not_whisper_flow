@@ -30,6 +30,12 @@ desktop.ini
 # User data & config (generated at runtime)
 .whisper_flow/
 
+# Downloaded model weights (HuggingFace cache — do not push, re-download via installer)
+model_cache/
+
+# One-off local utility scripts
+fix_config.py
+
 # Temporary / audio files
 *.tmp
 *.temp

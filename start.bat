@@ -1,65 +1,38 @@
 @echo off
-echo ========================================
-echo Not Whisper Flow - Quick Start
-echo ========================================
-echo.
+setlocal
 
-REM Check if Python is installed
-python --version >nul 2>&1
-if errorlevel 1 (
-    echo ERROR: Python is not installed or not in PATH
-    echo Please install Python 3.8+ from python.org
-    pause
-    exit /b 1
+REM ============================================================
+REM Not Whisper Flow - Windows launcher (no console window)
+REM ============================================================
+
+REM Use pythonw from the venv if it exists, otherwise system pythonw
+set PYTHONW=%~dp0venv\Scripts\pythonw.exe
+set PYTHON=%~dp0venv\Scripts\python.exe
+
+if not exist "%PYTHONW%" (
+    set PYTHONW=pythonw
+    set PYTHON=python
 )
 
-echo Python found!
-echo.
-
-REM Check if dependencies are installed
-echo Checking dependencies...
-python -c "import whisper; import customtkinter" >nul 2>&1
+REM Quick dependency check using the visible python
+"%PYTHON%" -c "import whisper, customtkinter" >nul 2>&1
 if errorlevel 1 (
-    echo.
-    echo Dependencies not installed. Running installation...
-    echo.
-    pip install -r requirements.txt
+    echo Installing dependencies...
+    "%PYTHON%" -m pip install -r "%~dp0requirements.txt"
     if errorlevel 1 (
-        echo.
         echo ERROR: Failed to install dependencies
         pause
         exit /b 1
     )
 )
 
-echo.
-echo Dependencies OK!
-echo.
-
-REM Check if setup has been run
+REM First-time setup check
 if not exist "%USERPROFILE%\.whisper_flow\config.json" (
-    echo.
-    echo First-time setup required...
-    echo.
-    python -m utils.installer
-    if errorlevel 1 (
-        echo.
-        echo ERROR: Setup failed
-        pause
-        exit /b 1
-    )
+    echo Running first-time setup...
+    "%PYTHON%" -m utils.installer
 )
 
-echo.
-echo ========================================
-echo Starting Not Whisper Flow...
-echo ========================================
-echo.
-echo Tray icon: microphone in system tray
-echo Hotkey: Ctrl+Shift+Space (start/stop recording)
-echo Modes: Code Prompt / Voice Notes (switch via tray menu)
-echo.
+REM Launch WITHOUT a console window
+start "" "%PYTHONW%" "%~dp0main.py"
 
-python main.py
-
-pause
+endlocal

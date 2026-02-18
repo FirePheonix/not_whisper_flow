@@ -48,9 +48,13 @@ class Config:
         # Voice notes settings
         "notes_directory": None,  # None = default (~/.whisper_flow/notes/)
 
+        # Ollama (local 7-8B agent brain)
+        "ollama_model": "qwen2.5:7b",   # any model: llama3.1:8b, llama3.2:3b, etc.
+        "ollama_url": "http://localhost:11434",
+
         # Advanced
         "enable_gpu": True,
-        "model_cache_dir": None,
+        "model_cache_dir": "E:\\not_whisper_flow\\model_cache",
         "log_level": "INFO",
     }
 

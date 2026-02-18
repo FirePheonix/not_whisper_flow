@@ -71,11 +71,16 @@ def download_slm_model(model_name: str = "qwen2.5-0.5b"):
 
         model_id = model_ids.get(model_name, model_ids["qwen2.5-0.5b"])
 
+        from config import get_config
+        config = get_config()
+        cache_dir = config.get("model_cache_dir")
+
         logger.info(f"Downloading {model_name} ({model_id})...")
+        logger.info(f"Using cache directory: {cache_dir}")
         logger.info("This may take a while...")
 
-        tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
-        model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True, cache_dir=cache_dir)
+        model = AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, cache_dir=cache_dir)
 
         logger.info(f"{model_name} model downloaded")
 

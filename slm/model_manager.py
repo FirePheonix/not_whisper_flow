@@ -7,6 +7,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from typing import Optional, Dict, Any
 from utils.logger import setup_logger
+from config import get_config
 
 logger = setup_logger(__name__)
 
@@ -27,6 +28,8 @@ class SLMModelManager:
         self.model_name = model_name
         self.model_id = self.MODELS[model_name]
         self.device = self._get_device(device)
+        self.config = get_config()
+        self.cache_dir = self.config.get("model_cache_dir")
 
         self.tokenizer: Optional[AutoTokenizer] = None
         self.model: Optional[AutoModelForCausalLM] = None
@@ -54,12 +57,14 @@ class SLMModelManager:
 
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_id,
-                trust_remote_code=True
+                trust_remote_code=True,
+                cache_dir=self.cache_dir
             )
 
             model_kwargs = {
                 "trust_remote_code": True,
                 "torch_dtype": torch.float16 if self.device == "cuda" else torch.float32,
+                "cache_dir": self.cache_dir
             }
 
             self.model = AutoModelForCausalLM.from_pretrained(
@@ -115,6 +120,47 @@ class SLMModelManager:
 
         except Exception as e:
             logger.error(f"Generation failed: {e}")
+            return ""
+
+    def chat(self,
+             messages: list,
+             max_new_tokens: int = 200,
+             temperature: float = 0.1) -> str:
+        """
+        Generate from a messages list: [{"role": "system"|"user"|"assistant", "content": "..."}]
+        Uses the model's native chat template when available.
+        """
+        if self.model is None:
+            self.load_model()
+
+        try:
+            if hasattr(self.tokenizer, 'apply_chat_template'):
+                text = self.tokenizer.apply_chat_template(
+                    messages, tokenize=False, add_generation_prompt=True
+                )
+            else:
+                # Fallback: concatenate all content
+                text = "\n".join(m["content"] for m in messages)
+
+            inputs = self.tokenizer(text, return_tensors="pt")
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            input_length = inputs["input_ids"].shape[1]
+
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_new_tokens,
+                    temperature=temperature,
+                    top_p=0.9,
+                    do_sample=temperature > 0,
+                    pad_token_id=self.tokenizer.eos_token_id,
+                )
+
+            generated_ids = outputs[0][input_length:]
+            return self.tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
+
+        except Exception as e:
+            logger.error(f"Chat generation failed: {e}")
             return ""
 
     def get_model_info(self) -> Dict[str, Any]:
