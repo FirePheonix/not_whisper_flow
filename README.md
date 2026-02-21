@@ -18,8 +18,7 @@
 
 - Python 3.8+
 - FFmpeg (for Whisper)
-- ~2 GB disk space (for models)
-- Microphone
+- ~6 GB disk space (for models)
 
 ## Quick Start
 
